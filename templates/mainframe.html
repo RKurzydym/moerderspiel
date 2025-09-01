@@ -1,38 +1,35 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:py="http://genshi.edgewall.org/"
-      lang="en" class="no-js">
+<html lang="en" class="no-js">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=4, minimum-scale=0.5, user-scalable=1"/>
-<meta id="baseurl" name="X-baseurl" content="${ url_for('.index') }"/>
-<link rel="stylesheet" type="text/css" media="all" href="${ url_for('static', filename='css/main.css') }" />
+<meta id="baseurl" name="X-baseurl" content="{{ url_for('.index') }}"/>
+<link rel="stylesheet" type="text/css" media="all" href="{{ url_for('static', filename='css/main.css') }}" />
 <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-<script type="text/javascript" src="${ url_for('static', filename='js/jquery.viewport.js') }"></script>
-<script type="text/javascript" src="${ url_for('static', filename='js/date-de-DE.js') }"></script>
-<script type="text/javascript" src="${ url_for('static', filename='js/time.js') }"></script>
-<script type="text/javascript" src="${ url_for('static', filename='js/canvasdateclockpicker.js') }"></script>
-<script type="text/javascript" src="${ url_for('static', filename='js/ajax.js') }"></script>
-<script type="text/javascript" src="${ url_for('static', filename='js/ui.js') }"></script>
-<script type="text/javascript" src="${ url_for('static', filename='js/jquery.panzoom.min.js') }"></script>
-<script type="text/javascript" src="${ url_for('static', filename='js/jquery.mousewheel.min.js') }"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.viewport.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/date-de-DE.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/time.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/canvasdateclockpicker.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ajax.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ui.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.panzoom.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.mousewheel.min.js') }}"></script>
 
 <title>Mörderspiel</title>
 </head>
 <body>
 	<h1>Das Mörderspiel</h1>
-        <py:if test="errormsg is not None and len(errormsg) != 0">
-                <div id="errormessage" class="box contentwidth center gray clear ontop">
-                        <p>${errormsg}</p>
-                </div>
-        </py:if>
-        <py:if test="errormsg is None or len(errormsg) == 0">
-        	<div id="errormessage" class="error"></div>
-        </py:if>
-	<div id="bgcontainer">
-		<div id="content">${content}</div>
-		<div id="background"></div>
-	</div>
+                {% if errormsg is not none and errormsg|length != 0 %}
+                        <div id="errormessage" class="box contentwidth center gray clear ontop">
+                                <p>{{ errormsg }}</p>
+                        </div>
+                {% else %}
+                        <div id="errormessage" class="error"></div>
+                {% endif %}
+        <div id="bgcontainer">
+                <div id="content">{{ content|safe }}</div>
+                <div id="background"></div>
+        </div>
 </body>
 </html>

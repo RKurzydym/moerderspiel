@@ -19,7 +19,7 @@ from genshi.input import XML
 from genshi.core import QName
 
 import qrcode
-import cStringIO
+import io
 import base64
 
 from email import encoders
@@ -45,15 +45,17 @@ def future_date(format='%d.%m.%Y %H:%M', **kwargs):
 	return (datetime.datetime.now() + datetime.timedelta(**kwargs)).strftime(format)
 
 def u8(s):
-	try:
-		return s.decode('utf8')
-	except UnicodeDecodeError:
-		try:
-			return s.decode('latin1')
-		except UnicodeDecodeError:
-			return None
-	except UnicodeEncodeError:
-		return None
+    try:
+        if isinstance(s, bytes):
+            return s.decode('utf8')
+        return s  # Already a string in Python 3
+    except UnicodeDecodeError:
+        try:
+            return s.decode('latin1') if isinstance(s, bytes) else s
+        except UnicodeDecodeError:
+            return None
+    except UnicodeEncodeError:
+        return None
 
 
 class Bunch(object):
@@ -155,11 +157,11 @@ def colorgen(starthue, format='#RGBA'):
 		if c % 3 == 0:
 			v = (v + PHI) % 1.0
 		if format == '#RGBA':
-			yield '#%02x%02x%02xA0' % ( r*255, g*255, b*255 )
+			yield '#%02x%02x%02xA0' % ( int(r*255), int(g*255), int(b*255) )
 		elif format == '#RGB':
-			yield '#%02x%02x%02x' % ( r*255, g*255, b*255 )
+			yield '#%02x%02x%02x' % ( int(r*255), int(g*255), int(b*255) )
 		elif format == 'rgba()':
-			yield 'rgba(%d, %d, %d, 0.627)' % ( r*255, g*255, b*255 )
+			yield 'rgba(%d, %d, %d, 0.627)' % ( int(r*255), int(g*255), int(b*255) )
 		
 html_escape_table = {
 	'"': "&quot;",
@@ -185,13 +187,13 @@ def escape_quotes(text):
 def qrdata(text, **kwargs):
 	qr = qrcode.QRCode(**kwargs)
 	qr.add_data(text)
-	qr.make() # Generate the QRCode itself
-	
+	qr.make()  # Generate the QRCode itself
+
 	# im contains a PIL.Image.Image object
 	im = qr.make_image()
-	
-	jpeg_image_buffer = cStringIO.StringIO()
-	im.save(jpeg_image_buffer)
+
+	jpeg_image_buffer = io.BytesIO()
+	im.save(jpeg_image_buffer, format='PNG')
 	return base64.b64encode(jpeg_image_buffer.getvalue())
 
 namelist = [

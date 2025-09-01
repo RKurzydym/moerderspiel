@@ -1,22 +1,21 @@
-<div xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:py="http://genshi.edgewall.org/"
-      lang="en">
+<div>
     <div id="inner-content">
-	<h2>Spiel: ${game.name}</h2>
-	<div id="makeakill" class="box half right" py:if="game.status == 'RUNNING' or game.status =='OVER'">
+	<h2>Spiel: {{game.name}}</h2>
+	{% if game.status == 'RUNNING' or game.status =='OVER' %}
+	<div id="makeakill" class="box half right" >
 		<h3>Erfolgreichen Mord eintragen!</h3>
 		<form action="admin" method="post" onsubmit="return ajaxsubmit(this);" accept-charset="utf8">
-			<input type="hidden" name="id" value="${game.id}"/>
-			<input type="hidden" name="mastercode" value="${game.mastercode}"/>
+			<input type="hidden" name="id" value="{{game.id}}"/>
+			<input type="hidden" name="mastercode" value="{{game.mastercode}}"/>
 			<input type="hidden" name="action" value="killplayer"/>
 			<table>
 				<tr>
 					<th>Kreis</th>
 					<td>
 						<select name="round">
-							<py:for each="round in sorted(game.rounds)">
-								<option value="${round}">Kreis: ${game.rounds[round].name}</option>
-							</py:for>
+							{% for round in sorted(game.rounds)%}
+								<option value="{{round}}">Kreis: {{game.rounds[round].name}}</option>
+							{% endfor %}
 						</select>
 					</td>
 				</tr><tr>
@@ -24,9 +23,9 @@
 					<td>
 						<select name="killer">
 							<option value="">!!! Game Master !!1elf!</option>
-							<py:for each="player in sorted(game.players, key=lambda p: p.name + p.info)">
-								<option value="${player.public_id}">${player.name} (${player.info})</option>
-							</py:for>
+							{% for player in sorted_players %}
+								<option value="{{player.public_id}}">{{player.name}} ({{player.info}})</option>
+							{% endfor %}
 						</select>
 					</td>
 				</tr><tr>
@@ -34,15 +33,15 @@
 					<td>
 						<select name="victim">
 							<option value="ERROR">-- Bitte auswählen --</option>
-							<py:for each="player in sorted(game.players, key=lambda p: p.name + p.info)">
-								<option value="${player.public_id}">${player.name} (${player.info})</option>
-							</py:for>
+							{% for player in sorted_players %}
+								<option value="{{player.public_id}}">{{player.name}} ({{player.info}})</option>
+							{% endfor %}
 						</select>
 					</td>
 				</tr><tr>
 					<th>Datum</th>
 					<td>
-						<input id="killdate" type="text" name="datum" value="${utils.now()}"/>
+						<input id="killdate" type="text" name="datum" value="{{utils.now()}}"/>
 						<input type="button" id="canvasdateclocktrigger" value="..."/>
 					</td>
 				</tr><tr>
@@ -68,23 +67,25 @@
 			</script>
 		</form>
 	</div>
+	{% endif %}
 	<div id="gameinfo" class="left half">
 		<dl>
-			<dt>Status</dt><dd>${game.status}</dd>
-			<dt>ID</dt><dd>${game.id}</dd>
-			<dt>Kreise</dt><dd>${len(game.rounds)}</dd>
-			<dt>Spieler</dt><dd>${len(game.players)}</dd>
-			<py:if test="game.status == 'RUNNING'">
-				<dt>Aufträge</dt><dd><a href="pdfget?id=${game.id}&amp;mastercode=${game.mastercode}">PDF</a></dd>
-			</py:if>
-			<dt>Massenmörder</dt><dd>${game.getMassMurdererString()}</dd>
+			<dt>Status</dt><dd>{{game.status}}</dd>
+			<dt>ID</dt><dd>{{game.id}}</dd>
+			<dt>Kreise</dt><dd>{{len(game.rounds)}}</dd>
+			<dt>Spieler</dt><dd>{{len(game.players)}}</dd>
+			{% if game.status == 'RUNNING' %}
+				<dt>Aufträge</dt><dd><a href="pdfget?id={{game.id}}&amp;mastercode={{game.mastercode}}">PDF</a></dd>
+			{% endif %}
+			<dt>Massenmörder</dt><dd>{{game.getMassMurdererString()}}</dd>
 		</dl>
 	</div>
-	<div id="gamestart" class="box right half clear" py:if="game.status == 'OPEN'">
+	{% if game.status == 'OPEN'%}
+	<div id="gamestart" class="box right half clear" >
 		<h3>Spiel starten</h3>
 		<p>Dies beendet die Registrierungsphase, generiert die Aufträge und startet das Spiel. Danach können keine weiteren Mitspieler einsteigen.</p>
 		<form action="startgame" method="post" accept-charset="utf8" onsubmit="showloadinganimation(this); this.style.display='none';">
-			<input type="hidden" name="gameid" value="${game.id}"/>
+			<input type="hidden" name="gameid" value="{{game.id}}"/>
 			<table>
 				<tr>
 					<th>Game Master Code:</th>
@@ -95,11 +96,13 @@
 		</form>
 		<p>Die Generierung der PDFs kann mehrere Minuten dauern. Bitte habe Geduld!</p>
 	</div>
-	<div id="gamestop" class="box right half clear" py:if="game.status == 'RUNNING'">
+	{% endif %}
+	{% if game.status == 'RUNNING' %}
+	<div id="gamestop" class="box right half clear">
 		<h3>Spiel abschließen</h3>
 		<p>Dies beendet das Spiel. Danach können keine weiteren Morde nachgetragen werden.</p>
 		<form action="endgame" method="post" accept-charset="utf8">
-			<input type="hidden" name="gameid" value="${game.id}"/>
+			<input type="hidden" name="gameid" value="{{game.id}}"/>
 			<table><tr><th>Game Master Code:</th><td>
 			<input type="password" name="mastercode" size="7"/>
 			</td><td>
@@ -107,11 +110,13 @@
 			</td></tr></table>
 		</form>
 	</div>
-	<div id="addplayer" class="box right half" py:if="game.status == 'OPEN' and not hasattr(game, 'games')">
+	{% endif %}
+	{% if game.status == 'OPEN' and not game.games is defined %}
+	<div id="addplayer" class="box right half">
 		<h3>Spieler hinzufügen</h3>
 		<form action="admin" method="post" accept-charset="utf8" onsubmit="return ajaxsubmit(this);">
-			<input type="hidden" name="id" value="${game.id}"/>
-			<input type="hidden" name="mastercode" value="${game.mastercode}"/>
+			<input type="hidden" name="id" value="{{game.id}}"/>
+			<input type="hidden" name="mastercode" value="{{game.mastercode}}"/>
 			<input type="hidden" name="action" value="addplayer"/>
 			<table>
 				<tr>
@@ -157,12 +162,14 @@
 			</table>
 		</form>
 	</div>
-	<div id="blankpdfget" class="box right half clear collapsed" py:if="game.status == 'OPEN'">
+	{% endif%}
+	{% if game.status == 'OPEN' %}
+	<div id="blankpdfget" class="box right half clear collapsed" >
 		<h3>Blankoaufträge</h3>
 		<p>Wenn am Spielort kein Drucker vorhanden ist, kann man diese Blankozettel mit zum Spielort nehmen und das Spiel komplett oder teilweise offline durchführen. Optional kann man nach dem Spiel alle Morde eintragen und den Spielern eine schöne Statistik im Nachhinein bieten. (TODO: Die Auftragszuordnungen müssen noch vom Server gemacht werden; der Game Master braucht also vor Spielbeginn kurz Internetzugang, um die Namen einzutragen und das Spiel zu starten.)</p>
 		<form action="pdfget" method="post" accept-charset="utf-8">
-			<input type="hidden" name="id" value="${game.id}"/>
-			<input type="hidden" name="mastercode" value="${game.mastercode}"/>
+			<input type="hidden" name="id" value="{{game.id}}"/>
+			<input type="hidden" name="mastercode" value="{{game.mastercode}}"/>
 			<table>
 				<tr>
 					<th>Voraussichtliche Spielerzahl:</th>
@@ -175,60 +182,85 @@
 			</table>
 		</form>
 	</div>
+	{% endif %}
 
 	<div id="listplayers">
-		<py:if test="game.status == 'OPEN'">
+		{% if game.status == 'OPEN' %}
+		
 			<h3>Liste der Mitspieler</h3>
 			<table>
-				<py:for each="player in sorted(game.players, key=lambda l:l.info + l.name)">
+				{% for player in sorted_players %}
 					<tr>
-						<td>${player.name}</td>
-						<td>${player.info}</td>
+						<td>{{player.name}}</td>
+						<td>{{player.info}}</td>
 						<td class="buttons">
-							<button onclick="return askajax('admin', {'id':'${game.id}', 'mastercode':'${game.mastercode}', 'action':'removeplayer', 'victim':'${player.public_id}' }, this, 'Spieler ${utils.escape_quotes(player.name)} wirklich wieder aus dem Spiel rausschmeißen?');">
+							<button onclick="return askajax('admin', {'id':'{{game.id}}', 'mastercode':'{{game.mastercode}}', 'action':'removeplayer', 'victim':'{{player.public_id}}'}, this, 'Spieler {{ utils.escape_quotes(player.name) }} wirklich wieder aus dem Spiel rausschmeißen?');">
 								kick
 							</button>
 						</td>
 					</tr>
-				</py:for>
+				{% endfor %}
 			</table>
-		</py:if>
-		<py:for each="round in sorted(game.rounds)" py:if="game.status == 'RUNNING' or game.status == 'OVER'">
-			<h3 py:if="len(game.rounds) > 1">Kreis: ${game.rounds[round].name}</h3>
+		{% endif %}
+		{% for round in sorted(game.rounds) %}
+		{% if game.status == 'RUNNING' or game.status == 'OVER' %}
+		
+			{% if len(game.rounds) > 1 %}
+			<h3 >Kreis: {{game.rounds[round].name}}</h3>
+			{% endif %}
 			<table>
 				<tr><th>Name</th><th/><th>Auftragscode</th><th>Ermordet von</th><th>Wann?</th><th>Tathergang</th><th></th></tr>
-				<py:for each="p in game.rounds[round].participants">
+				{% for p in game.rounds[round].participants%}
+
 					<tr>
-						<td>${p.player}</td>
+						<td>{{p.player}}</td>
 						<td class="buttons">
-							<button onclick="return askajax('admin', {'id':'${game.id}', 'mastercode':'${game.mastercode}', 'action':'kickplayer', 'victim':'${p.player.public_id}' }, this, 'Spieler ${utils.escape_quotes(p.player.name)} wirklich aus allen Runden rausschmeißen?');">
+							<button onclick="return askajax('admin', {'id':'{{game.id}}', 'mastercode':'{{game.mastercode}}', 'action':'kickplayer', 'victim':'{{p.player.public_id}}' }, this, 'Spieler {{utils.escape_quotes(p.player.name)}} wirklich aus allen Runden rausschmeißen?');">
 								kick
 							</button>
-							<span class="circle"><a href="pdfdownload?id=${game.id}&amp;mastercode=${game.mastercode}&amp;publicid=${p.player.public_id}">Auftrag</a></span>
+							<span class="circle"><a href="pdfdownload?id={{game.id}}&amp;mastercode={{game.mastercode}}&amp;publicid={{p.player.public_id}}">Auftrag</a></span>
 						</td>
-						<td>${p.id}</td>
-						<td><py:if test="p.killedby and p.killedby.killer">${p.killedby.killer.player}</py:if><py:if test="p.killedby and not p.killedby.killer">Game Master</py:if></td>
-						<td><py:if test="p.killedby">${utils.dateformat(p.killedby.date)}</py:if></td>
-						<td><py:if test="p.killedby">${p.killedby.reason}</py:if></td>
+						<td>{{p.id}}</td>
+						<td>
+							{%if p.killedby and p.killedby.killer %}
+							{{p.killedby.killer.player}}
+							{% endif %}
+							{%if p.killedby and not p.killedby.killer%}
+							Game Master
+							{% endif %}
+						</td>
+						<td>
+							{% if p.killedby %}
+							{{utils.dateformat(p.killedby.date)}}
+							{% endif %}
+						</td>
+						<td>
+							{% if p.killedby %}
+							{{p.killedby.reason}}
+							{% endif %}
+						</td>
 						<td class="buttons">
-							<py:if test="p.killedby">
-								<button onclick="return ajax('admin', {'id':'${game.id}', 'mastercode':'${game.mastercode}', 'action':'editkill', 'victim':'${p.id}' }, this);">
+							{% if p.killedby %}
+								<button onclick="return ajax('admin', {'id':'{{game.id}}', 'mastercode':'{{game.mastercode}}', 'action':'editkill', 'victim':'{{p.id}}' }, this);">
 									edit
 								</button>
-							</py:if>
-							<py:if test="p.canRevert()">
-								<button onclick="return askajax('admin', {'id':'${game.id}', 'mastercode':'${game.mastercode}', 'action':'revertkill', 'victim':'${p.id}', 'round': '${round}' }, this, 'Mord wirklich rückgängig machen?');">
+							{% endif %}
+							{% if p.canRevert()%}
+								<button onclick="return askajax('admin', {'id':'{{game.id}}', 'mastercode':'{{game.mastercode}}', 'action':'revertkill', 'victim':'{{p.id}}', 'round': '{{round}}' }, this, 'Mord wirklich rückgängig machen?');">
 									undo
 								</button>
-							</py:if>
+							{% endif %}
 						</td>
 					</tr>
-				</py:for>
+				
+				{% endfor %}
 			</table>
 			<!-- div style="width:96%; height:300px; overflow:auto; border:1px solid black; text-align:center;">
 				<img src="${ utils.url_for('gamegraphall', id=game.id, roundid=round, mastercode=game.mastercode) }" />
 			</div -->
-		</py:for>
+		
+		{% endif %}
+		{% endfor %}
 	</div>
 	</div>
 </div>

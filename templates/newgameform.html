@@ -1,8 +1,5 @@
 <form action="creategame" method="post" accept-charset="utf8" 
-	xmlns="http://www.w3.org/1999/xhtml"
-	xmlns:py="http://genshi.edgewall.org/"
-	xmlns:xi="http://www.w3.org/2001/XInclude"
-	lang="en">
+lang="en">
 	<input type="hidden" name="action" value="create"/>
   	<table>
   		<tr style="display:none;">
@@ -54,9 +51,9 @@
 			<td style="width:20em;">
 				<select size="1" name="kreiszahl"> 
                                         <option value="1">1 Leben, 1 Auftrag (1 Kreis)</option> 
-                                        <py:for each="x in range(2, 8)">
-                                                <option value="${x}" py:attrs="dict((('selected', ''),)) if x == 3 else None">${x} Leben, ${x} Aufträge (${x} Kreise)</option> 
-                                        </py:for>
+                                        {% for x in range(2, 8) %}
+											<option value="{{ x }}"{% if x == 3 %} selected{% endif %}>{{ x }} Leben, {{ x }} Aufträge ({{ x }} Kreise)</option>
+										{% endfor %}
                                 </select> 
 				<p class="hint">
 				Sollen die Spieler mehr als ein Leben haben, werden entsprechend viele "Kreise" eröffnet. Jeder Spieler ist in jedem Kreis genau 

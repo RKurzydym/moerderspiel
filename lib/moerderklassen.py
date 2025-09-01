@@ -30,7 +30,7 @@ def force_datetime(dt):
 		return dt
 	if isinstance(dt, int):
 		return datetime.utcfromtimestamp(dt)
-	if isinstance(dt, basestring):
+	if isinstance(dt, str):
 		dt = dt.strip()
 		for f in formats:
 			try:
@@ -52,7 +52,7 @@ class GameMessage(RuntimeError):
 	def __init__(self, value):
 		self.value = value
 	def __str__(self):
-		if isinstance(self.value, basestring):
+		if isinstance(self.value, str):
 			return self.value
 		else:
 			return repr(self.value)
@@ -62,7 +62,7 @@ class GameError(GameMessage):
 	def __init__(self, value):
 		self.value = value
 	def __str__(self):
-		if isinstance(self.value, basestring):
+		if isinstance(self.value, str):
 			return self.value
 		else:
 			return repr(self.value)
@@ -118,7 +118,9 @@ class Player:
 			return "%s (%s)" % (self.name, self.info)
 		else:
 			return self.name
-			
+	def __lt__(self, other):
+		return self.name < other.name  # oder ein anderes Attribut
+    
 	def html(self):
 		ret = ""
 		if self.info and len(self.info) > 0:
@@ -233,7 +235,7 @@ class Round:
 		self.name = name
 		self.participants = []
 	def __str__(self):
-		return u'Kreis %s' % self.name
+		return f'Kreis {self.name}'
 	
 	def getParticipant(self, participant_or_player_or_id):
 		"""Returns a Participant of this Round, using any of the following
@@ -250,7 +252,7 @@ class Round:
 		if isinstance(participant_or_player_or_id, Participant) or \
 			isinstance(participant_or_player_or_id, Player):
 			id = participant_or_player_or_id.id;
-		elif isinstance(participant_or_player_or_id, basestring):
+		elif isinstance(participant_or_player_or_id, str):
 			id = participant_or_player_or_id;
 		for participant in self.participants:
 			if participant.id == id or \
@@ -386,11 +388,11 @@ class Round:
 			if len(ret) == 0:
 				ret = lst
 			elif len(lst) >= len(ret):
-				for a in sorted(random.sample(xrange(len(lst)), len(ret)), reverse=True):
+				for a in sorted(random.sample(range(len(lst)), len(ret)), reverse=True):
 					lst.insert(a, ret.pop())
 				ret = lst
 			else:
-				for a in sorted(random.sample(xrange(len(ret)), len(lst)), reverse=True):
+				for a in sorted(random.sample(range(len(ret)), len(lst)), reverse=True):
 					ret.insert(a, lst.pop())
 		participants = ret
 		return participants
@@ -402,7 +404,7 @@ class Round:
 		"""
 		# get all rounds that are populated yet into a list
 		roundstocheck = []
-		for name,round in rounds.iteritems():
+		for name,round in rounds.items():
 			if len(round.participants) > 0 and not round == self:
 				roundstocheck.append(round)
 		# init own list
@@ -443,7 +445,7 @@ class Config:
 				('twitter', True),
 				('adminisplaying', False)
 			]:
-			if not state.has_key(key):
+			if key not in state:
 				state[key] = default
 		self.__dict__.update(state)
 
@@ -498,7 +500,7 @@ class Game:
 				('desc', None),
 				('gamemastermail', None)
 			]:
-			if not state.has_key(key):
+			if key not in state:
 				state[key] = default
 		self.__dict__.update(state)
 	
@@ -509,7 +511,7 @@ class Game:
 	def makeTestKills(self):
 		for round in self.rounds.values():
 			killtime = datetime.now() - timedelta(minutes=len(round.participants)*5)
-			for participant in random.sample(round.participants, random.randint(len(round.participants)/8, len(round.participants)/2)):
+			for participant in random.sample(round.participants, random.randint( int(len(round.participants)/8), int(len(round.participants)/2))):
 				killtime = killtime + timedelta(minutes=random.randint(0,10))
 				participant.kill(round.getCurrentKiller(participant), killtime, u"Aus Gründen umgebracht.")
 	
@@ -521,10 +523,12 @@ class Game:
 		Raises a GameError if the registration phase is over or the name length
 		is 1 or lower.
 		"""
+		print("Test")
+		print(name)
 		if self.status != 'OPEN':
 			raise GameError(u'Spiel ist nicht (mehr) in der Registrierungsphase')
 
-		if len(name) == 0:
+		if len(name) == 0 or name == None:
 			raise GameError(u'Der Spieler sollte auch einen Namen haben')
 			
 		if len(email) > 0 and email in [ p.email for p in self.players ]:
@@ -600,7 +604,7 @@ class Game:
 		"""
 		if self.status == 'RUNNING':
 			errors = 0;
-			for key,round in self.rounds.iteritems():
+			for key,round in self.rounds.items():
 				try:
 					round.kill(killer_public_id, victim_id, date, reason)
 					if killer_public_id is not None:
@@ -632,7 +636,7 @@ class Game:
 			return player_or_participant_or_id
 		elif isinstance(player_or_participant_or_id, Participant):
 			return player_or_participant_or_id.player
-		elif isinstance(player_or_participant_or_id, basestring):
+		elif isinstance(player_or_participant_or_id, str):
 			for player in self.players:
 				if (player.public_id == player_or_participant_or_id or
 					player.id == player_or_participant_or_id):
@@ -645,7 +649,7 @@ class Game:
 
 	def canRevert(self, victim_participant_or_id):
 		ret = False
-		for key,round in self.rounds.iteritems():
+		for key,round in self.rounds.items():
 			if round.canRevert(victim_participant_or_id):
 				ret = True
 		return ret
@@ -654,7 +658,7 @@ class Game:
 		vp = None
 		if isinstance(victim_participant_or_id, Participant):
 			vp = victim_participant_or_id
-		elif isinstance(victim_participant_or_id, basestring):
+		elif isinstance(victim_participant_or_id, str):
 			vp = self.findParticipant(victim_participant_or_id)
 		if isinstance(vp, Participant) and self.canRevert(vp):
 			killer = vp.killedby.killer.player
@@ -714,7 +718,7 @@ class Game:
 		return ret
 
 	def getHighScoreList(self):
-		playerlist = sorted(flatten([p.player for p in [r for r in self.rounds.values()].pop().participants]), key=lambda q: self.getScore(q), reverse=True)
+		playerlist = sorted(flatten([p.player for p in [r for r in self.rounds.values() ].pop().participants]), key=lambda q: self.getScore(q), reverse=True)
 		highscore = self.getScore(playerlist[0])
 		return sorted([ p for p in playerlist if self.getScore(p) == highscore ], key=lambda q: q.name+q.info)
 			
@@ -788,13 +792,13 @@ class Game:
 			tmplfile = "moerder2.tex"
 		shutil.copyfile(os.path.join(self.templatedir, tmplfile), os.path.join(tmptexdir, "moerder.tex"))
 		listfile = codecs.open(os.path.join(tmptexdir, "list.tex"), "w", "utf-8")
-		#for roundid,round in self.rounds.iteritems():
+		#for roundid,round in self.rounds.items():
 		#	for participant in round.participants:
 		#		killer = participant.player
 		#		victim = round.getInitialVictim(participant).player
 		for killer in sorted(players, key=lambda x: x.name):
 			assignments = 0
-			for roundid,round in self.rounds.iteritems():
+			for roundid,round in self.rounds.items():
 				participant = round.getParticipant(killer)
 				if participant is not None and participant.alive() and (participants is None or participant in participants):
 					victim = round.getCurrentVictim(killer)
@@ -840,7 +844,7 @@ class MultiGame(Game):
 		self.roundcount = rounds
 		r = {}
 		self.myrounds = []
-		for k,v in self.rounds.iteritems():
+		for k,v in self.rounds.items():
 			v.name = "%s-%s" % (self.id, k)
 			r[v.name] = v
 			self.myrounds.append(v.name) 
@@ -886,7 +890,7 @@ class MultiGame(Game):
 			else:
 				gameid = wordconstruct.WordGenerator().generate(7)
 			subgame = Game(name, self.roundcount, self.enddate, self.url, gameid, desc, None)
-			for k,v in subgame.rounds.iteritems():
+			for k,v in subgame.rounds.items():
 				v.name = "%s-%s" % (subgame.id, k)
 				self.rounds[v.name] = v
 			subgame.players = self.players
@@ -940,7 +944,7 @@ class MultiGame(Game):
 		if mastercode == self.mastercode:
 			if len(self.players) < 3:
 				raise GameError(u'Das Spiel startet nicht mit weniger als 3 Spielern.')
-			for roundid,round in self.rounds.iteritems():
+			for roundid,round in self.rounds.items():
 				round.start( [ p for p in self.players if roundid.startswith(p.subgame) or roundid in self.myrounds ], self.rounds )
 			self.status = 'RUNNING'
 			for game in self.games.values():
@@ -958,4 +962,4 @@ class MultiGame(Game):
 		Game.stop(self, mastercode)
 		for game in self.games.values():
 			game.status = 'OVER'
-		
+

@@ -2,121 +2,43 @@
       xmlns:py="http://genshi.edgewall.org/"
       lang="en">
     	<?python
-    	l = []
-    	for a in xrange(0,300): l.append("@media (min-width: %sex) and (max-width: %sex) { p.remtest:before { content:'%s'; } }" % (a, a+1, a))
-    	?>    	
-    <style>
-    	#bgcontainer {
-    		max-width: 100%;
-    	}
-    	p.remtest {
-    		display: none; /* for testing card width and grid: comment this */
-    	}
-    	<py:for each="s in l">
-    		$s
-    	</py:for> 
-    </style>
-    <div id="inner-content">
-    <p class="remtest">ex</p>
-	<div id="listplayers">
-		<ul class="cardlist">
-		    	<py:for each="game in games">
-			<py:if test="game.status != 'OPEN'">
-				<py:if test="hasattr(game, 'games')">
-				<py:for each="subgame in game.games.values()">
-					<li class="card gameinfo">
-						<table>
-							<tr><td>Spiel</td><td colspan="3">${subgame.name}</td></tr>
-							<tr><td>Spieler</td><td>${len(subgame.rounds.values()[0].participants)}</td><td>Morde</td><td>${len(list(subgame.getKilled()))}</td></tr>
-							<tr py:if="subgame.status != 'OPEN'"><td>Massenmörder</td><td colspan="3">${subgame.getMassMurdererString()}</td></tr>
-							<tr py:if="subgame.status != 'OPEN' and len(subgame.rounds) > 1"><td>nach Punkten</td><td colspan="3">${subgame.getHighScoreString()}</td></tr>
-						</table>
-					</li>
-				</py:for>
-				</py:if>
-				<li class="card gameinfo">
-					<table>
-						<tr><td>Spiel</td><td colspan="3">${game.name}</td></tr>
-						<tr><td>Spieler</td><td>${len(game.players)}</td><td>Morde</td><td>${len(list(game.getKilled()))}</td></tr>
-						<tr py:if="game.status != 'OPEN'"><td>Massenmörder</td><td colspan="3">${game.getMassMurdererString()}</td></tr>
-						<tr py:if="game.status != 'OPEN' and len(game.rounds) > 1"><td>nach Punkten</td><td colspan="3">${game.getHighScoreString()}</td></tr>
-					</table>
-				</li>
-			</py:if>
-			</py:for>
-				<?python 
-					colors = utils.colorgen(0.86, format='rgba()')
-					colorlist = {}
-					for round in games[0].rounds.values():
-						colorlist[str(round.name)] = next(colors)
-				?>
-				<py:for each="p in sorted([ item for sublist in [ game.getKilled() for game in games ] for item in sublist ], key=lambda x:x.killedby.date, reverse=True)">
-					<li class="card" py:if="p.killedby and p.killedby.killer">
-						<div class="player killer c${p.player.game.getKillsCount(p.killedby.killer.player)}">
-							<py:if test="p.killedby and p.killedby.killer">
-								<h3>${p.killedby.killer.player.name}</h3>
-								<span>${p.killedby.killer.player.info}</span>
-							</py:if>
-							<h3 py:if="p.killedby and not p.killedby.killer">Game Master</h3>
-							<!-- <span class="red symbols">${p.player.game.getKillsCount(p.killedby.killer.player)*'&#10003;'}</span> -->
-						</div>
-						<span class="mirrored">&#128298;</span>
-						<div class="player victim c${p.player.game.getDeathsCount(p)}">
-							<h3>${p.player.name}</h3>
-							<span>${p.player.info}</span>
-							<!-- <img py:for="g in range(p.player.game.getDeathsCount(p))" src='/static/images/skull.png'></img> -->
-						</div>
-						<p py:if="p.killedby" style="font-size:${max(190-len(p.killedby.reason)/1.9, 100.0)}%">${p.killedby.reason}</p>
-						<span class="bottomleft">
-							<py:if test="p.killedby">
-								<py:if test="len(games) &gt; 1">
-									<strong>${p.player.game.id}</strong>
-								</py:if>
-								<span class="circle" style="background-color:${colorlist[p.round.name]};">${p.round.name}</span>
-							</py:if>
-						</span>
-						<span class="bottomright">
-							<py:if test="p.killedby">
-								${utils.dateformat(p.killedby.date, format="%a")}&nbsp;${utils.dateformat(p.killedby.date, format="%d.%m. %H:%M")}
-								<img py:if="p.killedby.date.hour in [0, 1, 2, 3, 4]" src="/static/images/time-midnight.png"/>
-								<img py:if="p.killedby.date.hour in [5, 6]" src="/static/images/time-dawn.png"/>
-								<img py:if="p.killedby.date.hour in [7, 8]" src="/static/images/time-sunrise.png"/>
-								<img py:if="p.killedby.date.hour in [9, 10, 11]" src="/static/images/time-morning.png"/>
-								<img py:if="p.killedby.date.hour in [12, 13, 14]" src="/static/images/time-midday.png"/>
-								<img py:if="p.killedby.date.hour in [15, 16, 17, 18]" src="/static/images/time-afternoon.png"/>
-								<img py:if="p.killedby.date.hour in [19, 20, 21]" src="/static/images/time-sunset.png"/>
-								<img py:if="p.killedby.date.hour in [22, 23, 24]" src="/static/images/time-earlynight.png"/>
-							</py:if>
-						</span>
-					</li>
-				</py:for>
-			<py:if test="sum([len(game.getKilled()) for game in games]) &lt; 72">
-				<?python 
-					game = games[0]
-				?>
-				<li class="card rules" py:if="game.status == 'OPEN'">
-					<h3>Willkommen beim Mörderspiel!</h3>
-					<p>Das Mörderspiel ist ein Nebenbei-Spiel im Real Life mit drei Auswirkungen:
-					</p>
-					<p>&#10122;&nbsp;Man lernt sich untereinander besser kennen.</p>
-					<p>&#10123;&nbsp;Man entwickelt ein gehöriges Maß an Paranoia.</p>
-					<p>&#10124;&nbsp;Man entwickelt kreative Sozialinteraktion.</p>
-				</li>
-				<li class="card rules" py:if="game.status == 'OPEN'">
-					<h3>Ablauf</h3>
-					<p>&#10122;&nbsp;Anmelden. &#10123;&nbsp;Spielleiter gibt Aufträge aus.</p>
-					<p>&#10124;&nbsp;Jede/r versucht die auf den Aufträgen angegebenen Opfer zu finden und ihnen einen beliebigen Gegenstand
-					zu übergeben.</p>
-					<p>&#10125;&nbsp;Nimmt das Opfer den Gegenstand freiwillig an, verliert es ein Leben und einen Auftrag.</p>
-				</li>
-				<li class="card rules" py:if="game.status == 'RUNNING' and len(game.getKilled()) &lt; 8">
-					<h3>Willkommen beim Mörderspiel!</h3>
-					<p>Hier an dieser Stelle werden die erledigten Mordaufträge aufgelistet. Umschreibt also 
-					schön den Tathergang, wenn ihr einen Mord meldet.
-					</p><p>
-					Viel Spaß und Paranoia!
-					</p>
-				</li>
+		<div lang="en">
+			<style>
+				#bgcontainer {
+					max-width: 100%;
+				}
+				p.remtest {
+					display: none; /* for testing card width and grid: comment this */
+				}
+				{# Medienabfragen und dynamische Styles ggf. in externes CSS auslagern #}
+			</style>
+			<div id="inner-content">
+				<p class="remtest">ex</p>
+				<div id="listplayers">
+					<ul class="cardlist">
+						{# Hier Jinja2-Schleifen und Bedingungen für games, subgames, getKilled etc. einfügen #}
+						{# Beispiel: #}
+						{% for game in games %}
+							{% if game.status != 'OPEN' %}
+								{% if game.games is defined %}
+									{% for subgame in game.games.values() %}
+										<li class="card gameinfo">
+											{# Subgame-Infos hier einfügen #}
+										</li>
+									{% endfor %}
+								{% endif %}
+								<li class="card gameinfo">
+									<table>
+										{# Spielinfos hier einfügen #}
+									</table>
+								</li>
+							{% endif %}
+						{% endfor %}
+						{# Killed-List, Regeln, weitere Blöcke analog umsetzen #}
+					</ul>
+				</div>
+			</div>
+		</div>
 				<li class="card rules" py:if="game.status == 'RUNNING' and len(game.getKilled()) &lt; 5">
 					<h3>Aufträge abholen</h3>
 					<p>Irgendwo gibts eine Auftragsauslage. Nimm dir dort den Auftragszettel, der mit deinem

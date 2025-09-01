@@ -1,7 +1,4 @@
-<div xmlns="http://www.w3.org/1999/xhtml"
-	xmlns:py="http://genshi.edgewall.org/"
-	xmlns:xi="http://www.w3.org/2001/XInclude"
-	lang="en">
+<div lang="en">
 	<div class="box left half">
 		<h2>Was zur Hölle ist das hier?</h2>
 		<p>
@@ -43,9 +40,8 @@
 	
 	<div id="rules" class="box right half alwayscollapse">
 		<h3>Regeln</h3>
-		<a href="/static/documents/moerderspielregeln.pdf">Regeln
-		als PDF</a>
-		<xi:include href="regeln.html"/>
+		<a href="/static/documents/moerderspielregeln.pdf">Regeln als PDF</a>
+		{% include "regeln.html" %}
 	</div>
 	<div class="box right half">
 		<h2>Ein eröffnetes Spiel ansehen</h2>
@@ -63,7 +59,7 @@
 	</div>
 	<div class="box right half">
 		<h2>Ein neues Spiel eröffnen!</h2>
-		<xi:include href="newgameform.html"/>
+		{% include "newgameform.html" %}
 	</div>
 	
 	<div class="box right half">

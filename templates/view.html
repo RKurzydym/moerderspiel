@@ -1,7 +1,4 @@
-<div xmlns="http://www.w3.org/1999/xhtml"
-	xmlns:py="http://genshi.edgewall.org/"
-	xmlns:xi="http://www.w3.org/2001/XInclude"
-	lang="en">
+<div lang="en">
     <div id="inner-content">
 	<div id="gameinfo" class="left half gameinfo listplayers">
 <!--		<dl>
@@ -17,38 +14,42 @@
 		</dl>
 -->
 	<div class="card">
-		<h2>Spiel: ${game.name}</h2>
-	<p py:if="game.desc is not None and len(game.desc) > 3">
-		${game.desc}
-	</p>
-	<table>
-		<tr>
-			<td>Status</td><td>${game.status}</td>
-			<td>ID</td><td>${game.id}</td>
-		</tr>
-		<tr py:if="False">
-			<td>Twitter</td><td><a href="https://twitter.com/search?q=%23${game.id}">#${game.id}</a></td>
-			<td>Wall</td><td><a href="/wall/${game.id}">${game.id}</a></td>
-		</tr>
-		<tr>
-			<td>Spieler</td><td>${len(game.players)}</td>
-			<td>Morde</td><td>${len(list(game.getKilled()))}</td>
-		</tr>
-		<tr py:if="len(game.rounds) > 1 and game.status == 'OPEN' and not hasattr(game, 'games')">
-			<td>Kreise</td><td colspan="3">${len(game.rounds)} Leben, ${len(game.rounds)} Aufträge, ${len(game.rounds)} Mörder...</td>
-		</tr>
-		<tr py:if="game.status != 'OPEN'">
-			<td>Massenmörder</td><td colspan="3">${game.getMassMurdererString()}</td>
-		</tr>
-		<tr py:if="game.status != 'OPEN' and len(game.rounds) > 1">
-			<td>nach Punkten</td><td colspan="3">${game.getHighScoreString()}</td>
-		</tr>
-	</table>
-	<p class="small">Updates auf Twitter: Folge <a href="https://twitter.com/moerderbot">@moerderbot</a> oder <a href="https://twitter.com/search?q=%23${game.id}">#${game.id}</a></p>
-	<p class="small">Dauerupdatesendung: <a href="/wall/${game.id}">Mörderspielwall ${game.id}</a></p>
+		<h2>Spiel: {{ game.name }}</h2>
+		{% if game.desc is not none and game.desc|length > 3 %}
+			{{ game.desc }}
+		{% endif %}
+		<table>
+			<tr>
+				<td>Status</td><td>{{ game.status }}</td>
+				<td>ID</td><td>{{ game.id }}</td>
+			</tr>
+			{# Twitter/Wall Zeile wird nicht angezeigt, da py:if="False" #}
+			<tr>
+				<td>Spieler</td><td>{{ game.players|length }}</td>
+				<td>Morde</td><td>{{ game.getKilled()|length }}</td>
+			</tr>
+			{% if game.rounds|length > 1 and game.status == 'OPEN' and not game.__dict__.get('games', False) %}
+			<tr>
+				<td>Kreise</td><td colspan="3">{{ game.rounds|length }} Leben, {{ game.rounds|length }} Aufträge, {{ game.rounds|length }} Mörder...</td>
+			</tr>
+			{% endif %}
+			{% if game.status != 'OPEN' %}
+    <tr>
+        <td>Massenmörder</td><td colspan="3">{{ game.getMassMurdererString() }}</td>
+    </tr>
+    {% if game.rounds|length > 1 %}
+    <tr>
+        <td>nach Punkten</td><td colspan="3">{{ game.getHighScoreString() }}</td>
+    </tr>
+    {% endif %}
+{% endif %}
+		</table>
+		<p class="small">Updates auf Twitter: Folge <a href="https://twitter.com/moerderbot">@moerderbot</a> oder <a href="https://twitter.com/search?q=%23{{ game.id }}">#{{ game.id }}</a></p>
+		<p class="small">Dauerupdatesendung: <a href="/wall/{{game.id}}">Mörderspielwall {{ game.id }}</a></p>
 	</div>
 	</div>
-	<div id="makeakill" class="box right half alwayscollapse" py:if="game.status == 'RUNNING'">
+	{% if game.status == 'RUNNING' %}
+	<div id="makeakill" class="box right half alwayscollapse">
 		<h3>Erfolgreichen Mord melden!</h3>
 		<p>Wenn ihr nicht komplett online spielt, solltest du zu diesem Zeitpunkt bereits einen neuen
 		Auftrag von deinem Opfer bekommen haben. Und zwar genau den
@@ -56,7 +57,7 @@
 		erledigt hast (siehe Auftragszettel).</p>
 		<!-- form action="killplayer" method="post" name="killplayer" onsubmit="return ajaxsubmit(this);" accept-charset="utf8"  -->
 		<form action="killplayer" method="post" name="killplayer" accept-charset="utf8">
-			<input type="hidden" name="gameid" value="${game.id}"/>
+			<input type="hidden" name="gameid" value="{{ game.id }}"/>
 			<table>
 				<tr>
 					<th>Signaturcode</th>
@@ -71,9 +72,9 @@
 					<th>Mörder</th>
 					<td>
 						<select name="killerpublicid">
-							<py:for each="player in sorted(game.players, key=lambda p: p.name + p.info)">
-								<option	value="${player.public_id}">${player}</option>
-							</py:for>
+							{% for player in game.players|sort(attribute='name') %}
+							<option value="{{ player.public_id }}">{{ player }}</option>
+							{% endfor %}
 						</select>
 						<p class="hint">
 						Wer hat hier erfolgreich gemordet?
@@ -82,7 +83,7 @@
 				</tr><tr>
 					<th>Datum</th>
 					<td>
-						<input id="killdate" type="text" name="datum" value="${utils.now()}"/>
+						<input id="killdate" type="text" name="datum" value="{{utils.now()}}"/>
 						<input type="button" id="canvasdateclocktrigger" value="..."/>
 						<p class="hint">
 						Wann ist der Mord geschehen?
@@ -116,11 +117,13 @@
 			</script>
 		</form>
 	</div>
-	<div id="addplayer" class="box right half clear" py:if="game.status == 'OPEN'">
+	{% endif %}
+	{% if game.status == 'OPEN'%}
+	<div id="addplayer" class="box right half clear">
 		<h3>Zum Spiel anmelden</h3>
 		<!-- form action="addplayer" method="post" onsubmit="ajaxsubmit(this); return false;" accept-charset="utf8" -->
 		<form action="addplayer" method="post" accept-charset="utf8">
-			<input type="hidden" name="gameid" value="${game.id}"/>
+			<input type="hidden" name="gameid" value="{{ game.id }}"/>
 			<table>
 				<tr>
 					<th>Name:</th>
@@ -132,7 +135,8 @@
 						</p>
 					</td>
 				</tr>
-				<tr py:if="game.id.find('kif') > -1 or game.id.find('koma') > -1 or game.id.find('zkk') > -1">
+				{% if game.id.find('kif') > -1 or game.id.find('koma') > -1 or game.id.find('zkk') > -1%}
+				<tr>
 					<th>Hochschule:</th>
 					<td>
 						<input type="text" name="zusatzinfo" size="20"/>
@@ -142,7 +146,9 @@
 						</p>
 					</td>
 				</tr>
-				<tr py:if="game.id.find('kif') == -1 and game.id.find('koma') == -1 and game.id.find('zkk') == -1">
+				{% endif %}
+				{% if game.id.find('kif') == -1 and game.id.find('koma') == -1 and game.id.find('zkk') == -1 %}
+				<tr>
 					<th>Gruppe:</th>
 					<td>
 						<input type="text" name="zusatzinfo" size="20"/>
@@ -157,16 +163,22 @@
 						</p>
 					</td>
 				</tr>
-				<tr py:if="hasattr(game, 'games')">
-					
-					<th py:if="game.id.find('kif') > -1 or game.id.find('koma') > -1 or game.id.find('zkk') > -1">Konferenz</th>
-					<th py:if="game.id.find('kif') == -1 and game.id.find('koma') == -1 and game.id.find('zkk') == -1">Unterspiel</th>
+				{% endif %}
+				{% if game.games is defined %}
+				<tr>
+					{% if game.id.find('kif') > -1 or game.id.find('koma') > -1 or game.id.find('zkk') > -1 %}
+					<th >Konferenz</th>
+					{% endif %}
+					{% if game.id.find('kif') == -1 and game.id.find('koma') == -1 and game.id.find('zkk') == -1 %}
+					<th >Unterspiel</th>
+					{% endif %}
 					<td>
 						<py:for each="i, g in enumerate(game.games.values())"> 
-							<input type="radio" name="subgame" value="${g.id}">${g.name}</input><br/>
+							<input type="radio" name="subgame" value="{{g.id}}">{{g.name}}</input><br/>
 						</py:for>
 					</td>
 				</tr>
+				{% endif %}
 				<tr>
 					<th>Email-Adresse:</th>
 					<td>
@@ -194,10 +206,11 @@
 			</table>
 		</form>
 	</div>
+	{% endif %}
 	<div id="goadmin" class="box right half clear alwayscollapse">
 		<h3>Spiel administrieren</h3>
 		<form action="admin" method="post" accept-charset="utf8">
-			<input type="hidden" name="id" value="${game.id}"/>
+			<input type="hidden" name="id" value="{{game.id}}"/>
 			<table>
 				<tr>
 					<th>Game Master Code:</th>
@@ -207,11 +220,12 @@
 			</table>
 		</form>
 	</div>
-	<div id="gamestart" class="box right half clear" py:if="game.status == 'OPEN'">
+	{% if game.status == 'OPEN' %}
+	<div id="gamestart" class="box right half clear">
 		<h3>Spiel starten</h3>
 		<p>Dies beendet die Registrierungsphase, generiert die Aufträge und startet das Spiel. Danach können keine weiteren Mitspieler einsteigen.</p>
 		<form action="startgame" method="post" accept-charset="utf8" onsubmit="showloadinganimation(this); this.style.display='none';">
-			<input type="hidden" name="gameid" value="${game.id}"/>
+			<input type="hidden" name="gameid" value="{{game.id}}"/>
 			<table>
 				<tr>
 					<th>Game Master Code:</th>
@@ -222,6 +236,7 @@
 		</form>
 		<p>Die Generierung der PDFs kann mehrere Minuten dauern. Bitte habe Geduld!</p>
 	</div>
+	{% endif %}
 	<div id="rules" class="box right half clear alwayscollapse">
 		<h3>Regeln</h3>
 		<a href="/static/documents/moerderspielregeln.pdf">Regeln
@@ -229,102 +244,72 @@
 		<xi:include href="regeln.html"/>
 	</div>
 	<div id="listplayers">
-		<py:if test="game.status == 'OPEN'">
-			<h3>Liste der Mitspieler</h3>
-			<table>
-				<tr>
-					<th>Name</th>
-					<th>Gruppe</th>
-				</tr>
-				<py:for each="player in game.players">
-					<tr><td>${player.name}</td><td>${player.info}</td></tr>
-				</py:for>
-			</table>
-		</py:if>
-		<py:if test="game.status != 'OPEN'">
-			<h3>Spielgraphen</h3>
-			<py:if test="len(game.rounds) > 1">
-				<ul class="tabs">
-					<li py:if="True"><a href="${ utils.url_for('gamegraphall', id=game.id )}" onclick="return imgoverlay('#graphimage', '#gamegraph', this);">Alle Kreise</a></li>
-					<py:for each="round in sorted(game.rounds.values(), key=lambda k: k.name)">
-						<li><a href="${ utils.url_for('gamegraphall', id=game.id, roundid=round.name) }" onclick="return imgoverlay('#graphimage', '#gamegraph', this);">Kreis ${round.name}</a></li>
-					</py:for>
-				</ul>	
-			</py:if>
-			<div class="overlay-hidden" id="graphimage">
-				<a class="closeoverlay" href="#" onclick="return closeoverlay('#graphimage');">X</a>
-				<!-- img id="gamegraph" src="${ utils.url_for('gamegraphall', id=game.id, roundid=game.rounds.values()[0].name) }" / -->
-				<img id="gamegraph" src="/static/images/graphgen.gif" />
-			</div>
+		{% if game.status == 'OPEN' %}
+    <h3>Liste der Mitspieler</h3>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Gruppe</th>
+        </tr>
+        {% for player in game.players %}
+        <tr><td>{{ player.name }}</td><td>{{ player.info }}</td></tr>
+        {% endfor %}
+    </table>
+{% endif %}
 
-			<script type="text/javascript">
-			// <![CDATA[
-			(function() {
-				window.panzoom = $('#gamegraph').panzoom();
-				window.panzoom.parent().on('mousewheel.focal', function( e ) {
-					e.preventDefault();
-					var delta = e.delta || e.originalEvent.wheelDelta;
-					var zoomOut = delta ? delta < 0 : e.originalEvent.deltaY > 0;
-					panzoom.panzoom('zoom', zoomOut, {
-						increment: 0.1,
-						animate: false,
-						contain: 'invert',
-						focal: e
-					});
-				});
-			})();
-			//]]>
-			</script>
-
-    		</py:if>
-		<py:if test="game.status != 'OPEN'">
+{% if game.status != 'OPEN' %}
+    <h3>Spielgraphen</h3>
+    {% if game.rounds|length > 1 %}
+        <ul class="tabs">
+            <li><a href="{{ utils.url_for('gamegraphall', id=game.id) }}" onclick="return imgoverlay('#graphimage', '#gamegraph', this);">Alle Kreise</a></li>
+            {% for round in game.rounds.values()|sort(attribute='name') %}
+            <li><a href="{{ utils.url_for('gamegraphall', id=game.id, roundid=round.name) }}" onclick="return imgoverlay('#graphimage', '#gamegraph', this);">Kreis {{ round.name }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <div class="overlay-hidden" id="graphimage">
+        <a class="closeoverlay" href="#" onclick="return closeoverlay('#graphimage');">X</a>
+        <img id="gamegraph" src="/static/images/graphgen.gif" />
+    </div>
+{% endif %}
+		{% if game.status != 'OPEN' %}
 			<h3>Morde</h3>
 			<ul class="cardlist small">
-				<?python 
-					colors = utils.colorgen(0.86, format='rgba()')
-					colorlist = {}
-					for round in game.rounds.values():
-						colorlist[str(round.name)] = next(colors)
-				?>
-				<py:for each="p in sorted(game.getKilled(), key=lambda x:x.killedby.date, reverse=True)">
-					<li class="card" py:if="p.killedby and p.killedby.killer">
-						<div class="player killer c${game.getKillsCount(p.killedby.killer.player)}">
-							<py:if test="p.killedby and p.killedby.killer">
-								<h3>${p.killedby.killer.player.name}</h3>
-								<span>${p.killedby.killer.player.info}</span>
-							</py:if>
-							<h3 py:if="p.killedby and not p.killedby.killer">Game Master</h3>
+				{% for p in game.getKilled()|sort(attribute='killedby.date', reverse=True) %}
+            {% if p.killedby and p.killedby.killer %}
+            <li class="card">
+                <div class="player killer c{{ game.getKillsCount(p.killedby.killer.player) }}">
+							{% if p.killedby and p.killedby.killer%}
+							
+								<h3>{{ p.killedby.killer.player.name }}</h3>
+								<span>{{ p.killedby.killer.player.info }}</span>
+							
+							{% endif %}
+							{% if p.killedby and not p.killedby.killer %}
+							<h3>Game Master</h3>
+							{% endif %}
 							<!-- <span class="red symbols">${p.player.game.getKillsCount(p.killedby.killer.player)*'&#10003;'}</span> -->
 						</div>
 						<span class="mirrored">&#128298;</span>
-						<div class="player victim c${game.getDeathsCount(p)}">
-							<h3>${p.player.name}</h3>
-							<span>${p.player.info}</span>
+						<div class="player victim c{{ game.getDeathsCount(p) }}">
+							<h3>{{ p.player.name }}</h3>
+							<span>{{ p.player.info }}</span>
 							<!-- <img py:for="g in range(p.player.game.getDeathsCount(p))" src='/static/images/skull.png'></img> -->
 						</div>
-						<p py:if="p.killedby" style="font-size:${max(180-len(p.killedby.reason)/1.7, 100.0)}%">${p.killedby.reason}</p>
-						<span class="bottomleft">
-							<py:if test="p.killedby">
-								<span class="circle" style="background-color:${colorlist[p.round.name]};">${p.round.name}</span>
-							</py:if>
-						</span>
+						{% if p.killedby %}
+							{% set font_size = '%.1f'|format(max(180 - (p.killedby.reason|default('')|length)/1.7, 100.0)) %}
+							{% set background_color = colorlist[p.round.name]|default('#ccc') %}
+							<p style="font-size: {{ font_size }}%">{{ p.killedby.reason }}</p>
+							<span class="circle" style="background-color: {{ background_color }};">{{ p.round.name }}</span>
+						{% endif %}
 						<span class="bottomright">
-							<py:if test="p.killedby">
-								${utils.dateformat(p.killedby.date, format="%a")}&nbsp;${utils.dateformat(p.killedby.date, format="%d.%m. %H:%M")}
-								<!--
-								<img py:if="p.killedby.date.hour in [0, 1, 2, 3, 4]" src="/static/images/time-midnight.png"/>
-								<img py:if="p.killedby.date.hour in [5, 6]" src="/static/images/time-dawn.png"/>
-								<img py:if="p.killedby.date.hour in [7, 8]" src="/static/images/time-sunrise.png"/>
-								<img py:if="p.killedby.date.hour in [9, 10, 11]" src="/static/images/time-morning.png"/>
-								<img py:if="p.killedby.date.hour in [12, 13, 14]" src="/static/images/time-midday.png"/>
-								<img py:if="p.killedby.date.hour in [15, 16, 17, 18]" src="/static/images/time-afternoon.png"/>
-								<img py:if="p.killedby.date.hour in [19, 20, 21]" src="/static/images/time-sunset.png"/>
-								<img py:if="p.killedby.date.hour in [22, 23, 24]" src="/static/images/time-earlynight.png"/>
-								-->
-							</py:if>
+							{% if p.killedby %}
+								{{ utils.dateformat(p.killedby.date, format="%a") }}&nbsp;{{ utils.dateformat(p.killedby.date, format="%d.%m. %H:%M") }}
+							{% endif %}
 						</span>
 					</li>
-				</py:for>
+					{% endif %}
+				{% endfor %}
 
 <!--				<py:for each="p in game.getKilled()">
 						<li class="card" py:if="p.killedby and p.killedby.killer">
@@ -341,27 +326,39 @@
 -->
 
 			</ul>
-		</py:if>
-		<py:for each="round in sorted(game.rounds)" py:if="game.status == 'OVER'">
-			<h3 py:if="len(game.rounds) > 1">Kreis: ${game.rounds[round].name}</h3>
+		{% endif %}
+		{% if game.status == 'OVER'%}
+		<py:for each="round in sorted(game.rounds)">
+			{% if len(game.rounds) > 1%}
+			<h3>Kreis: {{game.rounds[round].name}}</h3>
+			{% endif %}
 			<p>Jeder in dieser Liste musste ursprünglich den
 			jeweils nächsten in dieser Liste umbringen (und der
 			letzte den ersten).</p>
 			<table>
 				<tr><th>Name</th><th>Ermordet von</th><th>Wann?</th><th>Tathergang</th><th></th></tr>
-				<py:for each="p in game.rounds[round].participants">
+				{% for p in game.rounds[round].participants %}
 					<tr>
-						<td>${p.player}</td>
-						<td><py:if test="p.killedby and p.killedby.killer">${p.killedby.killer.player}</py:if><py:if test="p.killedby and not p.killedby.killer">Game Master</py:if></td>
-						<td><py:if test="p.killedby">${utils.dateformat(p.killedby.date)}</py:if></td>
-						<td><py:if test="p.killedby">${p.killedby.reason}</py:if></td>
+						<td>{{ p.player }}</td>
+						<td>
+            {% if p.killedby and p.killedby.killer %}
+                {{ p.killedby.killer.player }}
+            {% elif p.killedby and not p.killedby.killer %}
+                Game Master
+            {% endif %}
+        </td>
+        <td>{% if p.killedby %}{{ utils.dateformat(p.killedby.date) }}{% endif %}</td>
+        <td>{% if p.killedby %}{{ p.killedby.reason }}{% endif %}</td>
+        <td></td>
 					</tr>
-				</py:for>
+				{% endfor %}
+				
 			</table>
 			<!-- div style="width:96%; height:300px; overflow:auto; border:1px solid black; text-align:center;">
 				<img src="${ utils.url_for('gamegraphall', id=game.id, roundid=round, mastercode=game.mastercode) }" />
 			</div -->
 		</py:for>
+		{% endif %}
 	</div>
 	</div>
 </div>

@@ -31,3 +31,5 @@ pip-log.txt
 
 # data files
 savegames
+
+.venv
